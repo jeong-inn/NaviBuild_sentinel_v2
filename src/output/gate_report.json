@@ -1,0 +1,143 @@
+{
+  "report_header": {
+    "build_version": "NAV_25W12_RC3",
+    "report_date": "2026-03-20T22:24:52.569887",
+    "generator": "NaviPM-Sentinel v2",
+    "gate_result": "HOLD"
+  },
+  "executive_summary": {
+    "total_issues": 48,
+    "critical_issues": 5,
+    "regression_issues": 2,
+    "category_distribution": {
+      "PERFORMANCE": 15,
+      "CRASH": 11,
+      "ROUTE_ERROR": 7,
+      "DATA_ERROR": 6,
+      "CONNECTIVITY": 1,
+      "UNKNOWN": 5,
+      "OTA_ISSUE": 3
+    },
+    "severity_distribution": {
+      "CRITICAL": 5,
+      "HIGH": 23,
+      "MEDIUM": 20,
+      "LOW": 0
+    }
+  },
+  "scenario_results": [
+    {
+      "id": "SC01",
+      "description": "정상 빌드, 이슈 없음",
+      "expected": "PASS",
+      "actual": "PASS",
+      "n_issues": 0,
+      "max_rpn": 0,
+      "match": true
+    },
+    {
+      "id": "SC02",
+      "description": "경로계산 타임아웃 단발",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "n_issues": 1,
+      "max_rpn": 84,
+      "match": true
+    },
+    {
+      "id": "SC03",
+      "description": "지도렌더링 크래시 반복",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "n_issues": 5,
+      "max_rpn": 162,
+      "match": true
+    },
+    {
+      "id": "SC04",
+      "description": "이전 빌드 해결 이슈 재발",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "n_issues": 2,
+      "max_rpn": 216,
+      "match": true
+    },
+    {
+      "id": "SC05",
+      "description": "경로오류 + 데이터오류 혼재",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "n_issues": 6,
+      "max_rpn": 140,
+      "match": true
+    },
+    {
+      "id": "SC06",
+      "description": "자동복구 확인된 이슈",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "n_issues": 1,
+      "max_rpn": 54,
+      "match": true
+    },
+    {
+      "id": "SC07",
+      "description": "미분류 패턴 다수",
+      "expected": "MONITOR",
+      "actual": "MONITOR",
+      "n_issues": 5,
+      "max_rpn": 72,
+      "match": true
+    },
+    {
+      "id": "SC08",
+      "description": "복합 크래시+성능+경로",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "n_issues": 6,
+      "max_rpn": 108,
+      "match": true
+    },
+    {
+      "id": "SC09",
+      "description": "특정 차종(IW_GEN5)만 발생",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "n_issues": 3,
+      "max_rpn": 126,
+      "match": true
+    },
+    {
+      "id": "SC10",
+      "description": "특정 지역(KR)만 발생",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "n_issues": 3,
+      "max_rpn": 84,
+      "match": true
+    },
+    {
+      "id": "SC11",
+      "description": "OTA 업데이트 후 신규 이슈",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "n_issues": 4,
+      "max_rpn": 96,
+      "match": true
+    },
+    {
+      "id": "SC12",
+      "description": "점진적 성능 저하 추세",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "n_issues": 12,
+      "max_rpn": 224,
+      "match": true
+    }
+  ],
+  "verification": {
+    "total_scenarios": 12,
+    "matched": 12,
+    "mismatched": 0
+  }
+}

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NaviPM-Sentinel v2 — PM Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f5f5f5; color: #333; }
+.header { background: #1a237e; color: #fff; padding: 24px 32px; }
+.header h1 { font-size: 20px; font-weight: 500; }
+.header .sub { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card h3 { font-size: 13px; color: #666; font-weight: 500; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric { font-size: 36px; font-weight: 600; }
+.metric.pass { color: #2e7d32; }
+.metric.hold { color: #c62828; }
+.metric.conditional { color: #e65100; }
+.metric.monitor { color: #1565c0; }
+.metric-label { font-size: 12px; color: #999; margin-top: 4px; }
+.checklist { list-style: none; }
+.checklist li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.checklist .icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.checklist .pass-icon { background: #e8f5e9; color: #2e7d32; }
+.checklist .fail-icon { background: #ffebee; color: #c62828; }
+.checklist .blocking { font-weight: 600; }
+.chart-container { position: relative; height: 250px; }
+.ota-stages { display: flex; gap: 12px; margin-top: 12px; }
+.ota-stage { flex: 1; padding: 12px; border-radius: 6px; background: #f8f9fa; text-align: center; }
+.ota-stage .pct { font-size: 24px; font-weight: 600; color: #1a237e; }
+.ota-stage .name { font-size: 11px; color: #666; margin-top: 4px; }
+.ota-stage .duration { font-size: 11px; color: #999; }
+.scenario-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.scenario-table th { text-align: left; padding: 8px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0; font-weight: 500; }
+.scenario-table td { padding: 8px; border-bottom: 1px solid #f0f0f0; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+.badge-pass { background: #e8f5e9; color: #2e7d32; }
+.badge-hold { background: #ffebee; color: #c62828; }
+.badge-conditional { background: #fff3e0; color: #e65100; }
+.badge-monitor { background: #e3f2fd; color: #1565c0; }
+.badge-critical { background: #c62828; color: #fff; }
+.badge-high { background: #e65100; color: #fff; }
+.badge-medium { background: #f9a825; color: #333; }
+.badge-low { background: #e8f5e9; color: #2e7d32; }
+.section-title { font-size: 16px; font-weight: 500; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #1a237e; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>NaviPM-Sentinel v2 — PM Dashboard</h1>
+  <div class="sub">Build: NAV_25W12_RC3 | Generated: 2026-03-20 22:24 | Scenarios: 12</div>
+</div>
+<div class="container">
+
+<!-- KPI Cards -->
+<div class="grid">
+  <div class="card">
+    <h3>Overall Gate Result</h3>
+    <div class="metric hold">HOLD</div>
+    <div class="metric-label">Weighted Score: 0.42</div>
+  </div>
+  <div class="card">
+    <h3>Total Issues</h3>
+    <div class="metric">48</div>
+    <div class="metric-label">Across 12 scenarios</div>
+  </div>
+  <div class="card">
+    <h3>Critical Issues</h3>
+    <div class="metric hold">5</div>
+    <div class="metric-label">RPN ≥ 200</div>
+  </div>
+  <div class="card">
+    <h3>Regressions</h3>
+    <div class="metric hold">2</div>
+    <div class="metric-label">RESOLVED_THEN_RECURRED</div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid">
+  <div class="card">
+    <h3>Issue Category Distribution</h3>
+    <div class="chart-container"><canvas id="categoryChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Severity Distribution</h3>
+    <div class="chart-container"><canvas id="severityChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Quality Gate Checklist -->
+<div class="section-title">A-SPICE Quality Gate Checklist</div>
+<div class="card">
+  <ul class="checklist">
+    <li class="blocking"><span class="icon pass-icon">✓</span><span>QG-01 — CRITICAL 심각도 결함 수 == 0 [BLOCKING]: CRITICAL 이슈 0건</span></li>
+<li class="blocking"><span class="icon pass-icon">✓</span><span>QG-02 — RESOLVED_THEN_RECURRED 이슈 수 == 0 [BLOCKING]: 재발(RESOLVED_THEN_RECURRED) 0건</span></li>
+<li class=""><span class="icon fail-icon">✗</span><span>QG-03 — CRASH 카테고리 이슈 ≤ 2건: CRASH 이슈 5건</span></li>
+<li class=""><span class="icon fail-icon">✗</span><span>QG-04 — HIGH 심각도 이슈 ≤ 2건: HIGH 이슈 5건</span></li>
+<li class=""><span class="icon pass-icon">✓</span><span>QG-05 — 복합 이슈 카테고리 ≤ 2종: 이슈 카테고리 1종: {'CRASH'}</span></li>
+<li class=""><span class="icon pass-icon">✓</span><span>QG-06 — TREND_WORSENING 카테고리 없음: 추세 상태: INSUFFICIENT_DATA</span></li>
+<li class=""><span class="icon pass-icon">✓</span><span>QG-07 — UNKNOWN 이슈 비율 < 30%: UNKNOWN 비율 0.0% (0건)</span></li>
+<li class=""><span class="icon pass-icon">✓</span><span>QG-08 — 차종별 이슈 편차 정상 범위: 차종 편차: 최대 집중도 40% (분포: {'IW_GEN4': 2, 'IW_GEN5': 1, 'IW_GEN5_EV': 2})</span></li>
+<li class=""><span class="icon fail-icon">✗</span><span>QG-09 — 평균 RPN < 100: 평균 RPN: 162.0</span></li>
+
+  </ul>
+</div>
+
+<!-- OTA Rollout -->
+<div class="section-title">OTA Rollout Recommendation</div>
+<div class="card">
+  <h3>Strategy: BLOCKED</h3>
+  <p style="font-size:13px;color:#666;margin-bottom:12px;">배포 보류. 이슈 해결 후 재평가 필요.</p>
+  <div class="ota-stages">
+    <div class="ota-stage"><div class="name">배포 보류</div></div>
+  </div>
+</div>
+
+<!-- Scenario Results Table -->
+<div class="section-title">Scenario Results (Expected vs Actual)</div>
+<div class="card" style="overflow-x:auto;">
+  <table class="scenario-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Description</th>
+        <th>Issues</th>
+        <th>Max RPN</th>
+        <th>Expected</th>
+        <th>Actual</th>
+        <th>Match</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>SC01</strong></td><td>정상 빌드, 이슈 없음</td><td>0</td><td>0</td><td><span class="badge badge-pass">PASS</span></td><td><span class="badge badge-pass">PASS</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC02</strong></td><td>경로계산 타임아웃 단발</td><td>1</td><td>84</td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC03</strong></td><td>지도렌더링 크래시 반복</td><td>5</td><td>162</td><td><span class="badge badge-hold">HOLD</span></td><td><span class="badge badge-hold">HOLD</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC04</strong></td><td>이전 빌드 해결 이슈 재발</td><td>2</td><td>216</td><td><span class="badge badge-hold">HOLD</span></td><td><span class="badge badge-hold">HOLD</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC05</strong></td><td>경로오류 + 데이터오류 혼재</td><td>6</td><td>140</td><td><span class="badge badge-hold">HOLD</span></td><td><span class="badge badge-hold">HOLD</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC06</strong></td><td>자동복구 확인된 이슈</td><td>1</td><td>54</td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC07</strong></td><td>미분류 패턴 다수</td><td>5</td><td>72</td><td><span class="badge badge-monitor">MONITOR</span></td><td><span class="badge badge-monitor">MONITOR</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC08</strong></td><td>복합 크래시+성능+경로</td><td>6</td><td>108</td><td><span class="badge badge-hold">HOLD</span></td><td><span class="badge badge-hold">HOLD</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC09</strong></td><td>특정 차종(IW_GEN5)만 발생</td><td>3</td><td>126</td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC10</strong></td><td>특정 지역(KR)만 발생</td><td>3</td><td>84</td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td><span class="badge badge-conditional">CONDITIONAL</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC11</strong></td><td>OTA 업데이트 후 신규 이슈</td><td>4</td><td>96</td><td><span class="badge badge-hold">HOLD</span></td><td><span class="badge badge-hold">HOLD</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+<tr><td><strong>SC12</strong></td><td>점진적 성능 저하 추세</td><td>12</td><td>224</td><td><span class="badge badge-hold">HOLD</span></td><td><span class="badge badge-hold">HOLD</span></td><td style="color:#2e7d32;font-weight:600;">✓</td></tr>
+
+    </tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+// Category Distribution Chart
+const catCtx = document.getElementById('categoryChart').getContext('2d');
+new Chart(catCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ["PERFORMANCE", "CRASH", "ROUTE_ERROR", "DATA_ERROR", "CONNECTIVITY", "UNKNOWN", "OTA_ISSUE"],
+    datasets: [{
+      data: [15, 11, 7, 6, 1, 5, 3],
+      backgroundColor: ['#c62828','#e65100','#1565c0','#2e7d32','#6a1b9a','#00838f','#78909c'],
+      borderWidth: 0,
+    }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
+});
+
+// Severity Distribution Chart
+const sevCtx = document.getElementById('severityChart').getContext('2d');
+new Chart(sevCtx, {
+  type: 'bar',
+  data: {
+    labels: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+    datasets: [{
+      data: [5, 23, 20, 0],
+      backgroundColor: ['#c62828','#e65100','#f9a825','#66bb6a'],
+      borderWidth: 0, borderRadius: 4,
+    }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+</script>
+</body>
+</html>

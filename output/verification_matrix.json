@@ -1,0 +1,92 @@
+{
+  "verification_result": "ALL_PASS",
+  "total": 12,
+  "passed": 12,
+  "failed": 0,
+  "details": [
+    {
+      "scenario_id": "SC01",
+      "description": "정상 빌드, 이슈 없음",
+      "expected": "PASS",
+      "actual": "PASS",
+      "match": true
+    },
+    {
+      "scenario_id": "SC02",
+      "description": "경로계산 타임아웃 단발",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "match": true
+    },
+    {
+      "scenario_id": "SC03",
+      "description": "지도렌더링 크래시 반복",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "match": true
+    },
+    {
+      "scenario_id": "SC04",
+      "description": "이전 빌드 해결 이슈 재발",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "match": true
+    },
+    {
+      "scenario_id": "SC05",
+      "description": "경로오류 + 데이터오류 혼재",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "match": true
+    },
+    {
+      "scenario_id": "SC06",
+      "description": "자동복구 확인된 이슈",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "match": true
+    },
+    {
+      "scenario_id": "SC07",
+      "description": "미분류 패턴 다수",
+      "expected": "MONITOR",
+      "actual": "MONITOR",
+      "match": true
+    },
+    {
+      "scenario_id": "SC08",
+      "description": "복합 크래시+성능+경로",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "match": true
+    },
+    {
+      "scenario_id": "SC09",
+      "description": "특정 차종(IW_GEN5)만 발생",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "match": true
+    },
+    {
+      "scenario_id": "SC10",
+      "description": "특정 지역(KR)만 발생",
+      "expected": "CONDITIONAL",
+      "actual": "CONDITIONAL",
+      "match": true
+    },
+    {
+      "scenario_id": "SC11",
+      "description": "OTA 업데이트 후 신규 이슈",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "match": true
+    },
+    {
+      "scenario_id": "SC12",
+      "description": "점진적 성능 저하 추세",
+      "expected": "HOLD",
+      "actual": "HOLD",
+      "match": true
+    }
+  ]
+}

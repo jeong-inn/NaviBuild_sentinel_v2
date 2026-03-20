@@ -1,0 +1,100 @@
+# NaviBuild-Sentinel v2 —
+
+---
+### 1. 프로젝트 한 줄
+> 내비게이션 SW 빌드 로그를 DLT 프로토콜 수준에서 파싱하고, TF-IDF 기반 이슈 클러스터링과 FMEA 심각도 산출로 **빌드 릴리즈 판정을 자동화하는 개발 PL용 품질 엔진**
+
+### 2. 강조점 이동
+
+| 항목 |  **PL 관점 (수정)** |
+|------|-------------------|
+| CAN/DLT 로그 | **"DLT Extended Header의 App/Context ID 체계를 이해하고 파서를 직접 구현"** |
+| TF-IDF |  **"왜 이 알고리즘인지 기술적으로 설명 가능 — ngram_range, sublinear_tf 파라미터 선택 근거"** |
+| FMEA RPN | "심각도를 다차원 평가" | **"Detection 점수에 log_level을 매핑한 설계 — FATAL은 빌드 시점 탐지 가능(D=2), WARN은 필드에서만 발견(D=6)"** |
+| 재발 탐지 |  **"3-Layer 아키텍처: Exact → Fuzzy(TF-IDF cosine>0.7) → Trend(선형 회귀). 각 Layer의 precision-recall trade-off"** |
+| 품질 게이트 |  **"9개 게이트 항목의 weight 설계 근거, blocking vs non-blocking 구분 로직, weighted score 산출 알고리즘"** |
+| OTA 시뮬레이션 |  **"Canary → Staged → Full 각 단계의 크래시율 임계치와 롤백 트리거 조건 설계"** |
+| 대시보드 |  **"개발팀 내부 빌드 리뷰 미팅에서 사용하는 기술 대시보드"** |
+
+### 3. 자소서 서사 변경
+"내비게이션 SW 개발 PL로서 빌드마다 발생하는 이슈를 기술적으로 분석하고, 개발팀이 신뢰할 수 있는 릴리즈 판정 기준을 직접 설계·구현했다. 단순 키워드 매칭이 아닌 TF-IDF 벡터화를 선택한 이유, FMEA의 Detection 점수에 DLT 로그 레벨을 매핑한 근거, 재발 탐지의 3-Layer 아키텍처에서 각 Layer의 임계치를 F1-score 기반으로 결정한 과정 — 이 모든 기술적 판단이 개발 PL의 역량이라고 생각했다."
+
+---
+
+## 면접 방어 포인트 (PL 버전, 5개)
+
+### Q1: "이 직무가 개발 PL인데, 이 프로젝트에서 '개발'은 뭔가요?"
+
+**A**: 이 프로젝트 자체가 개발입니다. 7개 모듈, 총 800줄 이상의 파이프라인을 직접 설계하고 구현했습니다. 특히 기술적으로 의미 있는 부분은 세 가지입니다.
+
+첫째, **DLT 로그 파서**를 AUTOSAR 스펙의 필드 구조(Storage Header → Standard Header → Extended Header → Payload)에 맞춰 설계했습니다. 실제 DLT는 바이너리지만, 논리적 구조를 JSON으로 정확히 모사해서 실무 전환이 가능합니다.
+
+둘째, **TF-IDF + Union-Find 클러스터링**으로 같은 root cause의 이슈를 자동 그룹핑합니다. 단순 키워드가 아니라 bigram까지 본다는 건, "route timeout"과 "path engine exceeded deadline"이 같은 이슈라는 걸 잡아낸다는 뜻입니다.
+
+셋째, **A-SPICE 품질 게이트 엔진**에서 9개 항목의 weight와 blocking 조건을 설계하고, 12개 시나리오로 전수 검증했습니다. weight 하나 바꾸면 판정이 달라지기 때문에, 각 시나리오의 expected를 먼저 정의하고 실제 결과를 맞춰가는 TDD와 유사한 방식으로 개발했습니다.
+
+### Q2: "TF-IDF 파라미터를 왜 그렇게 설정했나?"
+
+**A**: 세 가지 핵심 파라미터가 있습니다.
+
+`ngram_range=(1,2)`: unigram만 쓰면 "route"와 "calculation"이 따로 놀고, "route calculation"이라는 복합 의미를 못 잡습니다. bigram까지 포함하면 "route calculation", "map rendering" 같은 도메인 특화 표현이 feature로 잡힙니다.
+
+`sublinear_tf=True`: log(1+tf)를 적용합니다. 같은 단어가 로그 메시지에 3번 나온다고 3배 중요한 건 아닙니다. 로그 메시지는 짧고 반복이 적어서 raw tf보다 log-normalized가 더 안정적입니다.
+
+`max_features=500`: 내비게이션 도메인의 기술 용어는 한정적입니다. 500개면 route, crash, timeout, rendering, CRC 같은 핵심 토큰을 전부 커버하면서 노이즈를 제거할 수 있습니다.
+
+### Q3: "12개 시나리오를 어떻게 설계했나? 왜 12개인가?"
+
+**A**: 시나리오 설계 자체가 이 프로젝트의 핵심 기술 판단입니다. 단순히 "많이 만들자"가 아니라, 품질 게이트가 구분해야 하는 **경계 조건**을 커버하도록 설계했습니다.
+
+PASS/CONDITIONAL/MONITOR/HOLD 4개 판정이 있고, 각 판정의 경계에 해당하는 시나리오가 필요합니다. SC01(정상)은 베이스라인, SC02(단발 이슈)는 PASS와 CONDITIONAL의 경계, SC03(크래시 반복)은 CONDITIONAL과 HOLD의 경계입니다.
+
+여기에 **특수 케이스**를 추가했습니다. SC04(재발)는 blocking 조건 테스트, SC07(UNKNOWN)은 MONITOR 판정 테스트, SC09/SC10(차종/지역 특정)은 variant/region 분석 테스트, SC12(추세 악화)는 시계열 분석 테스트입니다.
+
+결과적으로 12개 시나리오가 품질 게이트의 모든 분기(branch)를 최소 1회 이상 통과하게 됩니다. 이건 테스트 설계에서 말하는 **branch coverage**와 같은 개념입니다.
+
+### Q4: "FMEA Detection 점수에 log_level을 매핑한 근거는?"
+
+**A**: Detection은 "이 결함을 얼마나 일찍 발견할 수 있는가"입니다.
+
+FATAL(D=2): 프로세스가 죽기 때문에 빌드 단계 또는 자동 테스트에서 즉시 탐지됩니다. 워치독이 잡거나, CI 파이프라인에서 크래시 로그가 바로 올라옵니다.
+
+ERROR(D=4): 프로세스는 살아있지만 기능 오류. 자동 테스트의 assertion에서 걸릴 가능성이 높습니다.
+
+WARN(D=6): 기능은 동작하지만 성능 저하나 일시적 오류. 필드 테스트에서 특정 조건을 만족해야 발견됩니다.
+
+INFO인데 이슈로 분류된 경우(D=8): 정상 로그처럼 보이지만 실제로는 문제인 케이스. 고객이 VOC를 올려야 발견됩니다.
+
+이 매핑이 중요한 이유는, 같은 Severity의 이슈라도 WARN으로 잡힌 이슈(D=6)가 FATAL로 잡힌 이슈(D=2)보다 RPN이 3배 높아진다는 것입니다. 즉 **"발견하기 어려운 이슈가 더 위험하다"**는 실무 직관을 수치로 반영합니다.
+
+### Q5: "가장 기술적으로 어려웠던 부분은?"
+
+**A**: 품질 게이트의 **weighted score 캘리브레이션**입니다. 12개 시나리오의 expected 결과를 먼저 정의하고, 9개 게이트 항목의 weight, blocking 조건, issue-count penalty를 조정해서 전수 일치시켜야 했습니다.
+
+예를 들어 SC03(크래시 5건)과 SC09(크래시 3건, 특정 차종)의 판정이 달라야 합니다. SC03은 HOLD, SC09는 CONDITIONAL. 하지만 둘 다 CRASH 카테고리입니다. 이 구분을 만들기 위해 CRASH 임계치를 3건으로 설정하고, issue-count penalty를 graduated(1건=0.16, 3건=0.22, 5건=0.28)로 설계했습니다.
+
+또 SC05(2종 이슈 6건)와 SC08(3종 이슈 6건)이 둘 다 HOLD지만 이유가 다릅니다. SC05는 "multi-category + 5건 이상" 규칙, SC08은 "CRASH 포함 3종 이상" 규칙입니다. 이렇게 **같은 판정이라도 도달 경로가 다른 시나리오**를 설계하고 검증한 것이 핵심이었습니다.
+
+최종적으로 12/12 전수 일치를 달성했고, 이 과정에서 품질 기준의 "왜?"를 모든 항목에 대해 설명할 수 있게 됐습니다.
+
+---
+
+## 코드 구조 — PL 관점에서 재해석
+
+| 모듈 | **PL이 보는 관점** |
+|------|-------------------|
+| `log_generator.py` | **"AUTOSAR DLT 스펙 기반 프로토콜 시뮬레이터 — ECU source, CAN ID, DLT context 매핑 직접 구현"** |
+| `log_parser.py` | **"DLT 파서 + SQLite 스키마 설계 — 인덱스 전략(scenario, build_version, issue_type), 쿼리 최적화"** |
+| `issue_classifier.py` | **"NLP 파이프라인: 전처리(hex/number normalization) → TF-IDF 벡터화 → cosine similarity → Union-Find 클러스터링"** |
+| `severity_engine.py` | **"FMEA RPN 엔진: S/O/D 3차원 스코어링, context-aware severity modifier, log_level→Detection 매핑"** |
+| `recurrence_analyzer.py` | **"3-Layer pattern matching: exact(O(1) hash) → fuzzy(TF-IDF cosine O(n)) → trend(linear regression O(n)). 각 layer의 시간복잡도와 precision-recall 특성"** |
+| `release_gate.py` | **"Rule engine: 9개 항목 weighted scoring + blocking 조건 + compound rule + graduated penalty. 12 시나리오 branch coverage 검증"** |
+| `report_generator.py` | **"Chart.js 기반 기술 대시보드 — 개발팀 빌드 리뷰 미팅에서 바로 사용 가능한 시각화"** |
+
+---
+
+### 쓸 것
+- "개발 PL로서 빌드 품질을 **기술적으로** 보장하는 시스템을 직접 설계·구현"
+- TF-IDF 파라미터 선택, FMEA Detection 매핑, 품질 게이트 weight 캘리브레이션 등 **기술적 판단의 근거**
+- 12개 시나리오 설계 = 테스트 설계 능력 (branch coverage 개념)
+- 12/12 전수 일치 = 설계와 구현의 정합성 검증
