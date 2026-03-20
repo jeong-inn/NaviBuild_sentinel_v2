@@ -191,7 +191,3 @@ navibuild_sentinel_v2/
 | pytest | 시나리오 검증 | Expected vs Actual 자동화 |
 
 ---
-
-## 라이선스
-
-이 프로젝트는 개인 포트폴리오 목적으로 제작되었습니다.
