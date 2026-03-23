@@ -3,6 +3,7 @@
 **차량용 내비게이션 Embedded SW 빌드 품질 분석 및 A-SPICE 기반 릴리즈 판정 자동화 엔진**
 
 ![NaviBuild-Sentinel Demo](https://github.com/user-attachments/assets/b225a07a-7628-463d-8c1d-6aeb2bf49556)
+
 내비게이션 SW 빌드 로그를 AUTOSAR DLT 프로토콜 수준에서 파싱하고, TF-IDF 기반 이슈 클러스터링과 FMEA RPN 심각도 산출로 빌드 릴리즈 판정을 자동화하는 개발 PL용 품질 엔진입니다.
 
 ---
